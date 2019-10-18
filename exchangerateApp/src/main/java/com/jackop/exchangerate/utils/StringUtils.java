@@ -11,11 +11,11 @@ public class StringUtils {
     return stringUtils.replaceLast(removeFirstSign, "\\]", "");
   }
 
-  public String replaceFirst(String string, String from, String to) {
+  private String replaceFirst(String string, String from, String to) {
     return string.replaceFirst(from, to);
   }
 
-  public String replaceLast(String string, String from, String to) {
+  private String replaceLast(String string, String from, String to) {
     int lastIndex = string.lastIndexOf(from);
     if (lastIndex < 0) {
       return string;

@@ -4,11 +4,12 @@ import java.util.Date;
 import java.util.List;
 
 public class Table {
-  String table;
-  String no;
-  Date tradingDate;
-  Date effectiveDate;
-  List<Rate> rates;
+
+  private String table;
+  private String no;
+  private Date tradingDate;
+  private Date effectiveDate;
+  private List<Rate> rates;
 
 
   public String getTable() {

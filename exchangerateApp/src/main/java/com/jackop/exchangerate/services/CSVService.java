@@ -1,23 +1,26 @@
 package com.jackop.exchangerate.services;
 
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.jackop.exchangerate.models.Rate;
+import com.jackop.exchangerate.models.Table;
+import com.jackop.exchangerate.utils.DateUtils;
+import java.util.logging.Logger;
 
 public class CSVService {
 
-  public String convertToCSV(String[] data) {
-    return Stream.of(data)
-      .map(this::escapeSpecialCharacters)
-      .collect(Collectors.joining(","));
-  }
+  private static final Logger LOGGER = Logger.getLogger(CSVService.class.getName());
 
-  public String escapeSpecialCharacters(String data) {
-    String escapedData = data.replaceAll("\\R", " ");
-    if (data.contains(",") || data.contains("\"") || data.contains("'")) {
-      data = data.replace("\"", "\"\"");
-      escapedData = "\"" + data + "\"";
-    }
+  public static String parseObjectForCsv(Table staff, Rate rate) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(DateUtils.parseDate(staff.getEffectiveDate()));
+    sb.append(",");
+    sb.append(rate.getAsk());
+    sb.append(",");
+    sb.append(rate.getBid());
+    sb.append(",");
+    sb.append(rate.getMid());
 
-    return escapedData;
+    LOGGER.info(sb.toString());
+
+    return sb.toString();
   }
 }

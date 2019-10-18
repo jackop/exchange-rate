@@ -1,14 +1,14 @@
 package com.jackop.exchangerate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jackop.exchangerate.models.Rate;
 import com.jackop.exchangerate.models.Table;
 import com.jackop.exchangerate.services.CSVService;
 import com.jackop.exchangerate.utils.StringUtils;
 import java.io.IOException;
-import java.util.List;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Objects;
 import java.util.Random;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Application {
@@ -16,32 +16,36 @@ public class Application {
   private static final String TABLE_A = "http://api.nbp.pl/api/exchangerates/tables/A";
   private static final String TABLE_C = "http://api.nbp.pl/api/exchangerates/tables/C";
   private static final String[] tables = {TABLE_A, TABLE_C};
+  private static final String CURRENCY_CODE = "USD";
   private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
+  private static final ObjectMapper mapper = new ObjectMapper();
+  private static Random rand;
+
+  static {
+    try {
+      rand = SecureRandom.getInstanceStrong();
+    } catch (NoSuchAlgorithmException e) {
+      LOGGER.warning(e.getMessage());
+    }
+  }
 
   public static void main(String[] args) throws IOException {
-
-    String selectedTableUrl = pickUpTableRandomly(tables);
-    CSVService csvService = new CSVService();
-    List<Rate> rates = fetch(selectedTableUrl);
+    String selectedTableUrl = pickUpTableRandomly();
+    fetch(selectedTableUrl);
   }
 
-  public static List<Rate> fetch(String url) throws IOException {
-    ObjectMapper mapper = new ObjectMapper();
+  private static void fetch(String url) throws IOException {
     String response = StringUtils.prepareJsonResponse(url);
     Table staff = mapper.readValue(response, Table.class);
-
-    LOGGER.log(Level.INFO, "Output from Server .... \n");
-    LOGGER.log(Level.INFO, staff.getTable());
-    LOGGER.log(Level.INFO, staff.getNo());
-    staff.getRates().stream().forEach(rate -> LOGGER.log(Level.INFO, rate.getCode()));
-
-    return staff.getRates();
+    staff.getRates().stream()
+      .filter(Objects::nonNull)
+      .filter(rate -> rate.getCode().equals(CURRENCY_CODE))
+      .forEach(rate -> CSVService.parseObjectForCsv(staff, rate));
   }
 
-  public static String pickUpTableRandomly(String[] tables) {
-    Random r = new Random();
-    int randomNumber = r.nextInt(tables.length);
+  private static String pickUpTableRandomly() {
+    int randomNumber = rand.nextInt(Application.tables.length);
 
-    return tables[randomNumber];
+    return Application.tables[randomNumber];
   }
 }

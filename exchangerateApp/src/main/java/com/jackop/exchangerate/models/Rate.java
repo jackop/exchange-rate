@@ -1,11 +1,12 @@
 package com.jackop.exchangerate.models;
 
 public class Rate {
-  String currency;
-  String code;
-  float bid;
-  float ask;
-  float mid;
+
+  private String currency;
+  private String code;
+  private float bid;
+  private float ask;
+  private float mid;
 
   public String getCurrency() {
     return currency;
