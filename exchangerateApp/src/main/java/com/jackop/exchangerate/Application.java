@@ -17,22 +17,22 @@ public class Application {
 
   private static final String EXCHANGE_RATE_URL = "http://api.nbp.pl/api/exchangerates/tables/";
   private static final String[] tables = {"A", "C"};
-  private static final String CURRENCY_CODE = "EUR";
   private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
   private static final ObjectMapper mapper = new ObjectMapper();
   private static final CSVService CSVService = new CSVService();
   private static final FetchService fetchService = new FetchService();
 
   public static void main(String[] args) throws IOException {
-    fetch(buildUrl("2019-10-10", "2019-10-16"));
+    fetch("EUR", "2019-10-10", "2019-10-16");
   }
 
-  private static void fetch(String url) throws IOException {
+  private static void fetch(String code, String from, String to) throws IOException {
+    String url = buildUrl(from, to);
     Optional<String> response = ofNullable(fetchService.fetch(url));
     if (response.isPresent()) {
       JavaType type = mapper.getTypeFactory().constructCollectionType(ArrayList.class, Table.class);
       List<Table> currencyTable = mapper.readValue(response.get(), type);
-      CSVService.parseObjectForCsv(CURRENCY_CODE, currencyTable);
+      CSVService.parseObjectForCsv(code, currencyTable);
     } else {
       Optional.empty();
     }

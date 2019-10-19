@@ -22,13 +22,13 @@ public class CSVService {
         currencyTable.getRates().stream()
           .filter(Objects::nonNull)
           .filter(rate -> rate.getCode().equalsIgnoreCase(code))
-          .forEach(rate1 -> {
+          .forEach(rate -> {
             linesOfValue.append(",");
-            linesOfValue.append(rate1.getAsk());
+            linesOfValue.append(rate.getAsk());
             linesOfValue.append(",");
-            linesOfValue.append(rate1.getBid());
+            linesOfValue.append(rate.getBid());
             linesOfValue.append(",");
-            linesOfValue.append(rate1.getMid());
+            linesOfValue.append(rate.getMid());
             linesOfValue.append(System.getProperty(LINE_SEPARATOR));
           });
       });
