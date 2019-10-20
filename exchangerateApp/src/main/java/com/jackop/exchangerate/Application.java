@@ -1,65 +1,29 @@
 package com.jackop.exchangerate;
 
-import static java.util.Optional.ofNullable;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jackop.exchangerate.models.Table;
-import com.jackop.exchangerate.services.CSVService;
-import com.jackop.exchangerate.services.FetchService;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.logging.Logger;
+import com.jackop.exchangerate.services.GetExchangeRate;
 
 public class Application {
 
-  private static final String EXCHANGE_RATE_URL = "http://api.nbp.pl/api/exchangerates/tables/";
-  private static final String[] tables = {"A", "C"};
-  private static final Logger LOGGER = Logger.getLogger(Application.class.getName());
-  private static final ObjectMapper mapper = new ObjectMapper();
-  private static final CSVService CSVService = new CSVService();
-  private static final FetchService fetchService = new FetchService();
+  public static void main(String[] args) {
 
-  public static void main(String[] args) throws IOException {
-    fetch("EUR", "2019-10-10", "2019-10-16");
-  }
+    // TODO: It's needed to fix behave when we will write data to existed file related to wrong first save data.
+    // my own examples
+    Thread t1 = new GetExchangeRate("USD", "2019-10-15", "2019-10-20");
+    Thread t2 = new GetExchangeRate("NOK", "2019-10-05", "2019-10-10");
+    Thread t3 = new GetExchangeRate("EUR", "2019-10-05", "2019-10-15");
+    Thread t4 = new GetExchangeRate("CHF", "2016-04-04", "2016-05-04");
 
-  private static void fetch(String code, String from, String to) throws IOException {
-    String url = buildUrl(from, to);
-    Optional<String> response = ofNullable(fetchService.fetch(url));
-    if (response.isPresent()) {
-      JavaType type = mapper.getTypeFactory().constructCollectionType(ArrayList.class, Table.class);
-      List<Table> currencyTable = mapper.readValue(response.get(), type);
-      CSVService.parseObjectForCsv(code, currencyTable);
-    } else {
-      Optional.empty();
-    }
-  }
+    // examples from task
+    Thread t5 = new GetExchangeRate("GBP", "2016-04-04", "2016-05-04");
+    Thread t6 = new GetExchangeRate("GBP", "2016-04-10", "2016-05-15");
+    Thread t7 = new GetExchangeRate("GBP", "2016-04-10", "2016-05-15");
 
-  private static String pickUpTableRandomly() {
-    Random rand = new Random();
-    int randomNumber = rand.nextInt(Application.tables.length);
-
-    return Application.tables[randomNumber];
-  }
-
-  private static String buildUrl(String from, String to) {
-    Optional<String> selectedTableUrl = ofNullable(pickUpTableRandomly());
-    StringBuilder buildUrl = new StringBuilder();
-    if (selectedTableUrl.isPresent()) {
-      buildUrl.append(EXCHANGE_RATE_URL);
-      buildUrl.append(selectedTableUrl.get());
-      buildUrl.append("/");
-      buildUrl.append(from);
-      buildUrl.append("/");
-      buildUrl.append(to);
-    } else {
-      LOGGER.info("Selected table in url is null.");
-      Optional.empty();
-    }
-
-    return buildUrl.toString();
+    t1.start();
+    t2.start();
+    t3.start();
+    t4.start();
+    t5.start();
+    t6.start();
+    t7.start();
   }
 }

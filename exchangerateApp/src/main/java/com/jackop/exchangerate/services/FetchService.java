@@ -7,7 +7,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class FetchService extends Thread {
+public class FetchService {
 
   private static final String METHOD_GET = "GET";
   private static final String ACCEPT = "Accept";
