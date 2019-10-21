@@ -1,5 +1,6 @@
 package com.jackop.exchangerate.services;
 
+import com.jackop.exchangerate.models.Rate;
 import com.jackop.exchangerate.models.Table;
 import com.jackop.exchangerate.models.Values;
 import com.jackop.exchangerate.utils.DateUtils;
@@ -14,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CSVService {
 
@@ -22,48 +25,28 @@ public class CSVService {
   private static final String FILE_EXTENSION = ".csv";
 
   static synchronized void parseObjectForCsv(String code, List<Table> table) {
-    StringBuilder linesOfValue = new StringBuilder();
-    table.stream()
+    String values = table.stream()
       .filter(Objects::nonNull)
-      .filter(fileExist -> !Paths.get(code + FILE_EXTENSION).toFile().exists())
-      .forEach(currencyTable -> {
-        linesOfValue.append(DateUtils.parseDate(currencyTable.getEffectiveDate()));
-        currencyTable.getRates().stream()
-          .filter(Objects::nonNull)
-          .filter(rate -> rate.getCode().equalsIgnoreCase(code))
-          .forEach(rate -> {
-            linesOfValue.append(",");
-            linesOfValue.append(rate.getBid());
-            linesOfValue.append(",");
-            linesOfValue.append(rate.getAsk());
-            linesOfValue.append(",");
-            linesOfValue.append(rate.getMid());
-            linesOfValue.append(System.getProperty(LINE_SEPARATOR));
-          });
-      });
-    table.stream()
-      .filter(Objects::nonNull)
-      .filter(fileExist -> Paths.get(code + FILE_EXTENSION).toFile().exists())
-      .forEach(currencyTable -> {
-        linesOfValue.append(DateUtils.parseDate(currencyTable.getEffectiveDate()));
-        currencyTable.getRates().stream()
-          .filter(Objects::nonNull)
-          .filter(rate -> rate.getCode().equalsIgnoreCase(code))
-          .forEach(
-            rate -> readTableFromCSV(code).stream().filter(values -> values.getEffectiveDate()
-              .equalsIgnoreCase(DateUtils.parseDate(currencyTable.getEffectiveDate())))
-              .forEach(values -> {
-                linesOfValue.append(",");
-                linesOfValue.append(values.getBid() != 0.0 ? values.getBid() : rate.getBid());
-                linesOfValue.append(",");
-                linesOfValue.append(values.getAsk() != 0.0 ? values.getAsk() : rate.getAsk());
-                linesOfValue.append(",");
-                linesOfValue.append(values.getMid() != 0.0 ? values.getMid() : rate.getMid());
-                linesOfValue.append(System.getProperty(LINE_SEPARATOR));
-              }));
-      });
+      .map(tab -> tab.getRates().stream().filter(rate -> rate.getCode().equalsIgnoreCase(code))
+        .map(rate -> {
+          String row = null;
+          row = DateUtils.parseDate(tab.getEffectiveDate()) + "," +
+            rate.getMid() + "," +
+            rate.getAsk() + "," +
+            rate.getBid() + System.getProperty(LINE_SEPARATOR);
+          return row;
+        })
+        .collect(Collectors.joining()))
+      .collect(Collectors.joining());
 
-    saveCsv(code, linesOfValue.toString());
+//    Stream<Values> tableStream = getValueFromTable(table);
+//    Stream<Values> valuesStream = readTableFromCSV(code).stream();
+//
+//    String val = Stream.concat(tableStream, valuesStream).distinct()
+//      .map(values1 -> values1.getEffectiveDate() + " " + values1.getBid())
+//      .collect(Collectors.joining());
+//    System.out.println(val);
+    saveCsv(code, values);
   }
 
   private static synchronized void saveCsv(String code, String text) {
@@ -117,4 +100,34 @@ public class CSVService {
 
     return values;
   }
+
+  private static synchronized Stream<Values> getValueFromTable(List<Table> table) {
+    List<Values> valuesList = new ArrayList<>();
+    Values values = new Values();
+
+    table.stream().forEach(tab -> tab.getRates().stream().forEach(rate -> {
+      values.setEffectiveDate(tab.getEffectiveDate().toString());
+      values.setMid(rate.getMid());
+      values.setBid(rate.getBid());
+      values.setAsk(rate.getAsk());
+      valuesList.add(values);
+    }));
+
+    return valuesList.stream();
+  }
+
+  private static synchronized String updateRecord(String code, String date, Rate rate) {
+    return readTableFromCSV(code).stream()
+//      .filter(value -> value.getEffectiveDate().equalsIgnoreCase(date))
+      .map(value ->
+        date + "," +
+          (value.getMid() == 0.0 ? Float.toString(value.getMid()) : rate.getMid() + "," +
+            (value.getAsk() == 0.0 ? Float.toString(value.getAsk()) : Float.toString(rate.getAsk()))
+            + "," +
+            (value.getBid() == 0.0 ? Float.toString(value.getBid())
+              : Float.toString(rate.getBid())))
+          + "," + System.getProperty(LINE_SEPARATOR))
+      .collect(Collectors.joining());
+  }
+
 }
