@@ -6,7 +6,7 @@ import com.jackop.exchangerate.models.Table;
 import java.util.List;
 import java.util.Optional;
 
-public class GetExchangeRate extends Thread {
+public class GetExchangeRate implements Runnable {
 
   private static final FetchService fetchService = new FetchService();
   private static final TableMapper tableMapper = new TableMapper();

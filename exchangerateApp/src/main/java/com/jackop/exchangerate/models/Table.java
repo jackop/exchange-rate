@@ -1,14 +1,13 @@
 package com.jackop.exchangerate.models;
 
-import java.util.Date;
 import java.util.List;
 
 public class Table {
 
   private String table;
   private String no;
-  private Date tradingDate;
-  private Date effectiveDate;
+  private String tradingDate;
+  private String effectiveDate;
   private List<Rate> rates;
 
 
@@ -28,19 +27,19 @@ public class Table {
     this.no = no;
   }
 
-  public Date getTradingDate() {
+  public String getTradingDate() {
     return tradingDate;
   }
 
-  public void setTradingDate(Date tradingDate) {
+  public void setTradingDate(String tradingDate) {
     this.tradingDate = tradingDate;
   }
 
-  public Date getEffectiveDate() {
+  public String getEffectiveDate() {
     return effectiveDate;
   }
 
-  public void setEffectiveDate(Date effectiveDate) {
+  public void setEffectiveDate(String effectiveDate) {
     this.effectiveDate = effectiveDate;
   }
 
