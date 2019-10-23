@@ -11,10 +11,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CSVService {
 
@@ -41,25 +43,20 @@ public class CSVService {
           .collect(Collectors.joining()))
         .collect(Collectors.joining());
     } else {
-      values = table.stream()
-        .filter(Objects::nonNull)
-        .map(tab -> tab.getRates().stream().filter(rate -> rate.getCode().equalsIgnoreCase(code))
-          .map(rate -> {
-            String row = null;
-            row = tab.getEffectiveDate() + "," +
-              rate.getMid() + "," +
-              rate.getAsk() + "," +
-              rate.getBid() + System.getProperty(LINE_SEPARATOR);
-            return row;
-          })
-          .collect(Collectors.joining()))
-        .collect(Collectors.joining());
-      values += readTableFromCSV(code).parallelStream().map(v -> {
+      List<Values> tableStream = Collections.synchronizedList(getValueFromTable(table));
+      List<Values> valuesStream = Collections.synchronizedList(readTableFromCSV(code));
+      List<Values> valuesList = new ArrayList<>(Stream.of(tableStream, valuesStream)
+        .flatMap(List::stream)
+        .collect(Collectors.toMap(Values::getEffectiveDate,
+          d -> d,
+          (Values x, Values y) -> x == null ? y : x))
+        .values());
+      values = valuesList.stream().map(d -> {
         String row = null;
-        row = v.getEffectiveDate() + "," +
-          v.getMid() + "," +
-          v.getAsk() + "," +
-          v.getBid() + System.getProperty(LINE_SEPARATOR);
+        row = d.getEffectiveDate() + "," +
+          d.getMid() + "," +
+          d.getAsk() + "," +
+          d.getBid() + System.getProperty(LINE_SEPARATOR);
         return row;
       }).collect(Collectors.joining());
     }
@@ -102,5 +99,20 @@ public class CSVService {
     }
 
     return values;
+  }
+
+  private static synchronized List<Values> getValueFromTable(List<Table> table) {
+    List<Values> valuesList = new ArrayList<>();
+    Values values = new Values();
+
+    table.stream().forEach(tab -> tab.getRates().stream().forEach(rate -> {
+      values.setEffectiveDate(tab.getEffectiveDate());
+      values.setMid(rate.getMid());
+      values.setBid(rate.getBid());
+      values.setAsk(rate.getAsk());
+      valuesList.add(values);
+    }));
+
+    return valuesList;
   }
 }

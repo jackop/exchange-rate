@@ -1,4 +1,5 @@
 exchangerateApp/.idea
 exchangerateApp/target
+exchangerateApp/target/classes
 exchangerateApp/exchange-rate.iml
 exchangerateApp/*.csv
