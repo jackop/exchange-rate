@@ -1,6 +1,7 @@
 package com.jackop.exchangerate.services;
 
 import com.jackop.exchangerate.mapper.ValueMapper;
+import com.jackop.exchangerate.models.Rate;
 import com.jackop.exchangerate.models.Table;
 import com.jackop.exchangerate.models.Values;
 import java.io.BufferedReader;
@@ -25,43 +26,60 @@ public class CSVService {
   private static final String FILE_EXTENSION = ".csv";
   private static final ValueMapper valueMapper = new ValueMapper();
 
-  static synchronized void parseObjectForCsv(String code, List<Table> table) {
+  static void parseObjectForCsv(String code, List<Table> table) {
     String values = null;
     if (!Paths.get(code + FILE_EXTENSION).toFile().exists()) {
       values = table.stream()
         .filter(Objects::nonNull)
         .distinct()
         .map(tab -> tab.getRates().stream().filter(rate -> rate.getCode().equalsIgnoreCase(code))
-          .map(rate -> {
-            String row = null;
-            row = tab.getEffectiveDate() + "," +
-              rate.getMid() + "," +
-              rate.getAsk() + "," +
-              rate.getBid() + System.getProperty(LINE_SEPARATOR);
-            return row;
-          })
+          .map(rate -> buildLineForNewFile(tab, rate))
           .collect(Collectors.joining()))
         .collect(Collectors.joining());
+
     } else {
       List<Values> tableStream = Collections.synchronizedList(getValueFromTable(table));
       List<Values> valuesStream = Collections.synchronizedList(readTableFromCSV(code));
       List<Values> valuesList = new ArrayList<>(Stream.of(tableStream, valuesStream)
         .flatMap(List::stream)
         .collect(Collectors.toMap(Values::getEffectiveDate,
-          d -> d,
-          (Values x, Values y) -> x == null ? y : x))
-        .values());
-      values = valuesList.stream().map(d -> {
-        String row = null;
-        row = d.getEffectiveDate() + "," +
-          d.getMid() + "," +
-          d.getAsk() + "," +
-          d.getBid() + System.getProperty(LINE_SEPARATOR);
-        return row;
-      }).collect(Collectors.joining());
+          d -> d, (Values x, Values y) -> x == null ? y : x)).values());
+
+      values = valuesList.stream().map(d -> buildLineForExistedFile(d))
+        .collect(Collectors.joining());
     }
 
     saveCsv(code, values);
+  }
+
+  private static String buildLineForNewFile(Table tab, Rate rate) {
+    StringBuilder row = new StringBuilder();
+
+    row.append(tab.getEffectiveDate());
+    row.append(",");
+    row.append(rate.getMid());
+    row.append(",");
+    row.append(rate.getAsk());
+    row.append(",");
+    row.append(rate.getBid());
+    row.append(System.getProperty(LINE_SEPARATOR));
+
+    return row.toString();
+  }
+
+  private static String buildLineForExistedFile(Values v) {
+    StringBuilder row = new StringBuilder();
+
+    row.append(v.getEffectiveDate());
+    row.append(",");
+    row.append(v.getMid());
+    row.append(",");
+    row.append(v.getAsk());
+    row.append(",");
+    row.append(v.getBid());
+    row.append(System.getProperty(LINE_SEPARATOR));
+
+    return row.toString();
   }
 
   private static synchronized void saveCsv(String code, String text) {
@@ -82,7 +100,7 @@ public class CSVService {
     }
   }
 
-  private static synchronized List<Values> readTableFromCSV(String code) {
+  private static List<Values> readTableFromCSV(String code) {
     List<Values> values = new ArrayList<>();
     Path pathToFile = Paths.get(code + FILE_EXTENSION);
 
@@ -101,7 +119,7 @@ public class CSVService {
     return values;
   }
 
-  private static synchronized List<Values> getValueFromTable(List<Table> table) {
+  private static List<Values> getValueFromTable(List<Table> table) {
     List<Values> valuesList = new ArrayList<>();
     Values values = new Values();
 

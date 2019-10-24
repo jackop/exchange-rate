@@ -6,7 +6,7 @@ import com.jackop.exchangerate.models.Table;
 import java.util.List;
 import java.util.Optional;
 
-public class GetExchangeRate implements Runnable {
+public class GetExchangeRate extends Thread {
 
   private static final FetchService fetchService = new FetchService();
   private static final TableMapper tableMapper = new TableMapper();
@@ -21,7 +21,7 @@ public class GetExchangeRate implements Runnable {
     this.endDate = endDate;
   }
 
-  private static synchronized void getExchangeRateData(String code, String from, String to) {
+  private static void getExchangeRateData(String code, String from, String to) {
     String url = URLService.buildUrl(from, to);
     Optional<String> response = ofNullable(fetchService.fetch(url));
     if (response.isPresent()) {

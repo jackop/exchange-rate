@@ -1,4 +1,4 @@
-# Exchange Rate App v1.0.1
+# Exchange Rate Raport App 
 
 Build exvhange rate for choosen currency from some Date to another Date.
 
