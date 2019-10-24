@@ -40,7 +40,7 @@ public class CSVService {
     } else {
       List<Values> tableStream = Collections.synchronizedList(getValueFromTable(table));
       List<Values> valuesStream = Collections.synchronizedList(readTableFromCSV(code));
-      List<Values> valuesList = new ArrayList<>(Stream.of(tableStream, valuesStream)
+      List<Values> valuesList = new ArrayList<>(Stream.of(valuesStream, tableStream)
         .flatMap(List::stream)
         .collect(Collectors.toMap(Values::getEffectiveDate,
           d -> d, (Values x, Values y) -> x == null ? y : x)).values());
@@ -82,6 +82,9 @@ public class CSVService {
     return row.toString();
   }
 
+  /**
+   * Critical Section
+   */
   private static synchronized void saveCsv(String code, String text) {
     String fileName = code + FILE_EXTENSION;
     FileWriter fileWriter = null;
