@@ -5,11 +5,15 @@ import com.jackop.exchangerate.mapper.TableMapper;
 import com.jackop.exchangerate.models.Table;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.StampedLock;
+import java.util.logging.Logger;
 
 public class GetExchangeRate extends Thread {
 
   private static final FetchService fetchService = new FetchService();
   private static final TableMapper tableMapper = new TableMapper();
+  private static final StampedLock lock = new StampedLock();
+  private static final Logger LOGGER = Logger.getLogger(GetExchangeRate.class.getName());
 
   private String code;
   private String startDate;
@@ -32,6 +36,14 @@ public class GetExchangeRate extends Thread {
 
   @Override
   public void run() {
-    getExchangeRateData(this.code, this.startDate, this.endDate);
+    long stamp = lock.writeLock();
+    try {
+      sleep(2);
+      getExchangeRateData(this.code, this.startDate, this.endDate);
+    } catch (InterruptedException e) {
+      LOGGER.warning("run | Exeption: " + e.getMessage());
+    } finally {
+      lock.unlock(stamp);
+    }
   }
 }

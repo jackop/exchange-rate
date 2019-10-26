@@ -31,7 +31,7 @@ public class URLService {
     } else {
       LOGGER.info("Selected table in url is null.");
     }
-
+    
     return buildUrl.toString();
   }
 }

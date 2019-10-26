@@ -12,12 +12,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CSVService {
 
@@ -28,6 +30,8 @@ public class CSVService {
 
   static void parseObjectForCsv(String code, List<Table> table) {
     String values = null;
+    Map<String, Values> map = new ConcurrentHashMap<>();
+
     if (!Paths.get(code + FILE_EXTENSION).toFile().exists()) {
       values = table.stream()
         .filter(Objects::nonNull)
@@ -36,17 +40,45 @@ public class CSVService {
           .map(rate -> buildLineForNewFile(tab, rate))
           .collect(Collectors.joining()))
         .collect(Collectors.joining());
-
     } else {
       List<Values> tableStream = Collections.synchronizedList(getValueFromTable(table));
       List<Values> valuesStream = Collections.synchronizedList(readTableFromCSV(code));
-      List<Values> valuesList = new ArrayList<>(Stream.of(valuesStream, tableStream)
-        .flatMap(List::stream)
-        .collect(Collectors.toMap(Values::getEffectiveDate,
-          d -> d, (Values x, Values y) -> x == null ? y : x)).values());
 
-      values = valuesList.stream().map(d -> buildLineForExistedFile(d))
-        .collect(Collectors.joining());
+      valuesStream.stream().forEach(vs -> map.put(vs.getEffectiveDate(),
+          new Values(vs.getEffectiveDate(), vs.getMid(), vs.getAsk(), vs.getBid())));
+
+      tableStream.stream().forEach(ts -> {
+        if (map.get(ts.getEffectiveDate()) != null) {
+          if (map.get(ts.getEffectiveDate()).getAsk() != ts.getAsk()) {
+            map.get(ts.getEffectiveDate()).setAdditives(Arrays.asList(Float.toString(ts.getAsk())));
+          } else if (map.get(ts.getEffectiveDate()).getMid()!= ts.getMid()) {
+            map.get(ts.getEffectiveDate()).setAdditives(Arrays.asList(Float.toString(ts.getMid())));
+          } else if (map.get(ts.getEffectiveDate()).getBid() != ts.getBid()) {
+            map.get(ts.getEffectiveDate()).setAdditives(Arrays.asList(Float.toString(ts.getBid())));
+          }
+        } else  {
+          map.put(ts.getEffectiveDate(),
+            new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid()));
+        }
+
+      });
+
+      values = map.entrySet().stream()
+        .filter(Objects::nonNull)
+        .map(v -> {
+          StringBuilder row = new StringBuilder();
+          row.append(v.getKey());
+          row.append(",");
+          row.append(v.getValue().getMid());
+          row.append(",");
+          row.append(v.getValue().getAsk());
+          row.append(",");
+          row.append(v.getValue().getBid());
+          row.append(",");
+          row.append(v.getValue().getAdditives() != null ? v.getValue().getAdditives() : "");
+          row.append(System.getProperty(LINE_SEPARATOR));
+          return row.toString();
+        }).collect(Collectors.joining());
     }
 
     saveCsv(code, values);
@@ -67,24 +99,7 @@ public class CSVService {
     return row.toString();
   }
 
-  private static String buildLineForExistedFile(Values v) {
-    StringBuilder row = new StringBuilder();
 
-    row.append(v.getEffectiveDate());
-    row.append(",");
-    row.append(v.getMid());
-    row.append(",");
-    row.append(v.getAsk());
-    row.append(",");
-    row.append(v.getBid());
-    row.append(System.getProperty(LINE_SEPARATOR));
-
-    return row.toString();
-  }
-
-  /**
-   * Critical Section
-   */
   private static synchronized void saveCsv(String code, String text) {
     String fileName = code + FILE_EXTENSION;
     FileWriter fileWriter = null;
@@ -106,11 +121,11 @@ public class CSVService {
   private static List<Values> readTableFromCSV(String code) {
     List<Values> values = new ArrayList<>();
     Path pathToFile = Paths.get(code + FILE_EXTENSION);
-
+    String[] attributes = null;
     try (BufferedReader br = Files.newBufferedReader(pathToFile, StandardCharsets.US_ASCII)) {
       String line = br.readLine();
       while (line != null) {
-        String[] attributes = line.split(",");
+        attributes = line.split(",");
         Values valueItems = valueMapper.mapValues(attributes);
         values.add(valueItems);
         line = br.readLine();
