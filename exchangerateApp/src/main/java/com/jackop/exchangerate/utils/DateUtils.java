@@ -7,7 +7,7 @@ public class DateUtils {
 
   private static final String DATE_FORMAT = "yyyy-MM-dd";
 
-  public synchronized static String parseDate(Date date) {
+  public static String parseDate(Date date) {
     SimpleDateFormat format = new SimpleDateFormat(DATE_FORMAT);
 
     return format.format(date);

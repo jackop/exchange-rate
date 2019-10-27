@@ -27,6 +27,7 @@ public class CSVService {
   private static final String LINE_SEPARATOR = "line.separator";
   private static final String FILE_EXTENSION = ".csv";
   private static final ValueMapper valueMapper = new ValueMapper();
+  private static final Object locker = new Object();
 
   static void parseObjectForCsv(String code, List<Table> table) {
     String values = null;
@@ -45,18 +46,18 @@ public class CSVService {
       List<Values> valuesStream = Collections.synchronizedList(readTableFromCSV(code));
 
       valuesStream.stream().forEach(vs -> map.put(vs.getEffectiveDate(),
-          new Values(vs.getEffectiveDate(), vs.getMid(), vs.getAsk(), vs.getBid())));
+        new Values(vs.getEffectiveDate(), vs.getMid(), vs.getAsk(), vs.getBid())));
 
       tableStream.stream().forEach(ts -> {
         if (map.get(ts.getEffectiveDate()) != null) {
           if (map.get(ts.getEffectiveDate()).getAsk() != ts.getAsk()) {
             map.get(ts.getEffectiveDate()).setAdditives(Arrays.asList(Float.toString(ts.getAsk())));
-          } else if (map.get(ts.getEffectiveDate()).getMid()!= ts.getMid()) {
+          } else if (map.get(ts.getEffectiveDate()).getMid() != ts.getMid()) {
             map.get(ts.getEffectiveDate()).setAdditives(Arrays.asList(Float.toString(ts.getMid())));
           } else if (map.get(ts.getEffectiveDate()).getBid() != ts.getBid()) {
             map.get(ts.getEffectiveDate()).setAdditives(Arrays.asList(Float.toString(ts.getBid())));
           }
-        } else  {
+        } else {
           map.put(ts.getEffectiveDate(),
             new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid()));
         }
@@ -100,20 +101,23 @@ public class CSVService {
   }
 
 
-  private static synchronized void saveCsv(String code, String text) {
+  private static void saveCsv(String code, String text) {
     String fileName = code + FILE_EXTENSION;
     FileWriter fileWriter = null;
-    try {
-      fileWriter = new FileWriter(fileName);
-      fileWriter.append(text);
-    } catch (IOException e) {
-      LOGGER.warning("saveCsv | Exeption durin write to file: " + e.getMessage());
-    } finally {
+    synchronized (locker) {
       try {
-        fileWriter.flush();
-        fileWriter.close();
+        fileWriter = new FileWriter(fileName);
+        fileWriter.append(text);
+
       } catch (IOException e) {
-        LOGGER.warning("saveCsv | Exeption durin close & flush Writer: " + e.getMessage());
+        LOGGER.warning("saveCsv | Exeption durin write to file: " + e.getMessage());
+      } finally {
+        try {
+          fileWriter.flush();
+          fileWriter.close();
+        } catch (IOException e) {
+          LOGGER.warning("saveCsv | Exeption durin close & flush Writer: " + e.getMessage());
+        }
       }
     }
   }
@@ -122,22 +126,26 @@ public class CSVService {
     List<Values> values = new ArrayList<>();
     Path pathToFile = Paths.get(code + FILE_EXTENSION);
     String[] attributes = null;
-    try (BufferedReader br = Files.newBufferedReader(pathToFile, StandardCharsets.US_ASCII)) {
-      String line = br.readLine();
-      while (line != null) {
-        attributes = line.split(",");
-        Values valueItems = valueMapper.mapValues(attributes);
-        values.add(valueItems);
-        line = br.readLine();
+    synchronized (locker) {
+      try (BufferedReader br = Files.newBufferedReader(pathToFile, StandardCharsets.US_ASCII)) {
+        String line = br.readLine();
+        while (line != null) {
+          attributes = line.split(",");
+          Values valueItems = valueMapper.mapValues(attributes);
+          values.add(valueItems);
+          line = br.readLine();
+        }
+      } catch (IOException ioe) {
+        LOGGER.warning("readTableFromCSV | Excetion: " + ioe.getMessage());
       }
-    } catch (IOException ioe) {
-      LOGGER.warning("readTableFromCSV | Excetion: " + ioe.getMessage());
     }
 
     return values;
   }
 
   private static List<Values> getValueFromTable(List<Table> table) {
+    System.out.println("Start getting for thread: " + Thread.currentThread().getName());
+
     List<Values> valuesList = new ArrayList<>();
     Values values = new Values();
 
@@ -149,6 +157,7 @@ public class CSVService {
       valuesList.add(values);
     }));
 
+    System.out.println("Finish getting for thread: " + Thread.currentThread().getName());
     return valuesList;
   }
 }

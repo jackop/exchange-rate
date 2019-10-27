@@ -36,14 +36,6 @@ public class GetExchangeRate extends Thread {
 
   @Override
   public void run() {
-    long stamp = lock.writeLock();
-    try {
-      sleep(2);
-      getExchangeRateData(this.code, this.startDate, this.endDate);
-    } catch (InterruptedException e) {
-      LOGGER.warning("run | Exeption: " + e.getMessage());
-    } finally {
-      lock.unlock(stamp);
-    }
+    getExchangeRateData(this.code, this.startDate, this.endDate);
   }
 }

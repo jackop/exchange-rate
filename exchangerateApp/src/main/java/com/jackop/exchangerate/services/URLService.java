@@ -11,14 +11,14 @@ public class URLService {
   private static final String[] tables = {"A", "C"};
   private static final Logger LOGGER = Logger.getLogger(URLService.class.getName());
 
-  private static synchronized String pickUpTableRandomly() {
+  private static String pickUpTableRandomly() {
     Random rand = new Random();
     int randomNumber = rand.nextInt(tables.length);
 
     return tables[randomNumber];
   }
 
-  static synchronized String buildUrl(String from, String to) {
+  static String buildUrl(String from, String to) {
     Optional<String> selectedTableUrl = ofNullable(pickUpTableRandomly());
     StringBuilder buildUrl = new StringBuilder();
     if (selectedTableUrl.isPresent()) {
@@ -31,7 +31,7 @@ public class URLService {
     } else {
       LOGGER.info("Selected table in url is null.");
     }
-    
+
     return buildUrl.toString();
   }
 }
