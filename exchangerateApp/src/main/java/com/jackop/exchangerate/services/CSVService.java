@@ -50,13 +50,7 @@ public class CSVService {
           new Values(vs.getEffectiveDate(), vs.getMid(), vs.getAsk(), vs.getBid(),
             vs.getAdditives()));
       });
-
-
-      valuesStream.stream().forEach(a -> {
-        System.out.println(a.getEffectiveDate());
-        System.out.println(a.getAdditives().toString());
-      });
-
+      
       tableStream.stream().forEach(ts -> {
 //        if (map.get(ts.getEffectiveDate()).getAsk() != ts.getAsk()) {
 //          map.get(ts.getEffectiveDate()).getAdditives().add(Float.toString(ts.getAsk()));
