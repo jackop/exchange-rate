@@ -10,11 +10,13 @@ public class Values {
   private float mid;
   private List<String> additives;
 
-  public Values(String effectiveDate, float bid, float ask, float mid) {
+  public Values(String effectiveDate, float bid, float ask, float mid,
+    List<String> additives) {
     this.effectiveDate = effectiveDate;
     this.bid = bid;
     this.ask = ask;
     this.mid = mid;
+    this.additives = additives;
   }
 
   public Values() {}

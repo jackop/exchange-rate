@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +27,7 @@ public class CSVService {
   private static final String FILE_EXTENSION = ".csv";
   private static final ValueMapper valueMapper = new ValueMapper();
   private static final Object locker = new Object();
+  private static final Map<String, Object> lockers = new ConcurrentHashMap<>();
 
   static void parseObjectForCsv(String code, List<Table> table) {
     String values = null;
@@ -45,22 +45,30 @@ public class CSVService {
       List<Values> tableStream = Collections.synchronizedList(getValueFromTable(table));
       List<Values> valuesStream = Collections.synchronizedList(readTableFromCSV(code));
 
-      valuesStream.stream().forEach(vs -> map.put(vs.getEffectiveDate(),
-        new Values(vs.getEffectiveDate(), vs.getMid(), vs.getAsk(), vs.getBid())));
+      valuesStream.stream().forEach(vs -> {
+        map.put(vs.getEffectiveDate(),
+          new Values(vs.getEffectiveDate(), vs.getMid(), vs.getAsk(), vs.getBid(),
+            vs.getAdditives()));
+      });
+
+
+      valuesStream.stream().forEach(a -> {
+        System.out.println(a.getEffectiveDate());
+        System.out.println(a.getAdditives().toString());
+      });
 
       tableStream.stream().forEach(ts -> {
-        if (map.get(ts.getEffectiveDate()) != null) {
-          if (map.get(ts.getEffectiveDate()).getAsk() != ts.getAsk()) {
-            map.get(ts.getEffectiveDate()).setAdditives(Arrays.asList(Float.toString(ts.getAsk())));
-          } else if (map.get(ts.getEffectiveDate()).getMid() != ts.getMid()) {
-            map.get(ts.getEffectiveDate()).setAdditives(Arrays.asList(Float.toString(ts.getMid())));
-          } else if (map.get(ts.getEffectiveDate()).getBid() != ts.getBid()) {
-            map.get(ts.getEffectiveDate()).setAdditives(Arrays.asList(Float.toString(ts.getBid())));
-          }
-        } else {
-          map.put(ts.getEffectiveDate(),
-            new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid()));
-        }
+//        if (map.get(ts.getEffectiveDate()).getAsk() != ts.getAsk()) {
+//          map.get(ts.getEffectiveDate()).getAdditives().add(Float.toString(ts.getAsk()));
+//        } else if (map.get(ts.getEffectiveDate()).getMid() != ts.getMid()) {
+//          map.get(ts.getEffectiveDate()).getAdditives().add(Float.toString(ts.getMid()));
+//        } else if (map.get(ts.getEffectiveDate()).getBid() != ts.getBid()) {
+//          map.get(ts.getEffectiveDate()).getAdditives().add(Float.toString(ts.getBid()));
+//        } else {
+//        }
+        map.put(ts.getEffectiveDate(),
+          new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid(),
+            ts.getAdditives()));
 
       });
 
@@ -75,7 +83,7 @@ public class CSVService {
           row.append(v.getValue().getAsk());
           row.append(",");
           row.append(v.getValue().getBid());
-          row.append(",");
+          row.append(v.getValue().getAdditives() != null ? "," : "");
           row.append(v.getValue().getAdditives() != null ? v.getValue().getAdditives() : "");
           row.append(System.getProperty(LINE_SEPARATOR));
           return row.toString();
@@ -104,7 +112,11 @@ public class CSVService {
   private static void saveCsv(String code, String text) {
     String fileName = code + FILE_EXTENSION;
     FileWriter fileWriter = null;
-    synchronized (locker) {
+    synchronized (lockers) {
+      if (!lockers.containsKey(code)) {
+        lockers.put(code, locker);
+      }
+      LOGGER.info("readTableFromCSV | Started Thread: " + Thread.currentThread().getName());
       try {
         fileWriter = new FileWriter(fileName);
         fileWriter.append(text);
@@ -118,7 +130,9 @@ public class CSVService {
         } catch (IOException e) {
           LOGGER.warning("saveCsv | Exeption durin close & flush Writer: " + e.getMessage());
         }
+        lockers.remove(code);
       }
+      LOGGER.info("readTableFromCSV | Finished Thread: " + Thread.currentThread().getName());
     }
   }
 
@@ -126,7 +140,11 @@ public class CSVService {
     List<Values> values = new ArrayList<>();
     Path pathToFile = Paths.get(code + FILE_EXTENSION);
     String[] attributes = null;
-    synchronized (locker) {
+    synchronized (lockers) {
+      if (!lockers.containsKey(code)) {
+        lockers.put(code, locker);
+      }
+      LOGGER.info("readTableFromCSV | Started Thread: " + Thread.currentThread().getName());
       try (BufferedReader br = Files.newBufferedReader(pathToFile, StandardCharsets.US_ASCII)) {
         String line = br.readLine();
         while (line != null) {
@@ -137,15 +155,16 @@ public class CSVService {
         }
       } catch (IOException ioe) {
         LOGGER.warning("readTableFromCSV | Excetion: " + ioe.getMessage());
+      } finally {
+        lockers.remove(code);
       }
+      LOGGER.info("readTableFromCSV | Finished Thread: " + Thread.currentThread().getName());
     }
 
     return values;
   }
 
   private static List<Values> getValueFromTable(List<Table> table) {
-    System.out.println("Start getting for thread: " + Thread.currentThread().getName());
-
     List<Values> valuesList = new ArrayList<>();
     Values values = new Values();
 
@@ -157,7 +176,6 @@ public class CSVService {
       valuesList.add(values);
     }));
 
-    System.out.println("Finish getting for thread: " + Thread.currentThread().getName());
     return valuesList;
   }
 }
