@@ -63,7 +63,6 @@ public class CSVService {
         map.put(ts.getEffectiveDate(),
           new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid(),
             ts.getAdditives()));
-
       });
 
       values = map.entrySet().stream()
