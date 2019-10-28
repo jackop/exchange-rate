@@ -1,6 +1,7 @@
 package com.jackop.exchangerate.models;
 
 import java.util.List;
+import java.util.Set;
 
 public class Values {
 
@@ -8,10 +9,10 @@ public class Values {
   private float bid;
   private float ask;
   private float mid;
-  private List<String> additives;
+  private Set<String> additives;
 
   public Values(String effectiveDate, float bid, float ask, float mid,
-    List<String> additives) {
+    Set<String> additives) {
     this.effectiveDate = effectiveDate;
     this.bid = bid;
     this.ask = ask;
@@ -21,11 +22,11 @@ public class Values {
 
   public Values() {}
 
-  public List<String> getAdditives() {
+  public Set<String> getAdditives() {
     return additives;
   }
 
-  public void setAdditives(List<String> additives) {
+  public void setAdditives(Set<String> additives) {
     this.additives = additives;
   }
 
