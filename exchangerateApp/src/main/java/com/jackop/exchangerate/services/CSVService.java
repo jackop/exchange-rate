@@ -50,7 +50,7 @@ public class CSVService {
           new Values(vs.getEffectiveDate(), vs.getMid(), vs.getAsk(), vs.getBid(),
             vs.getAdditives()));
       });
-      
+
       tableStream.stream().forEach(ts -> {
 //        if (map.get(ts.getEffectiveDate()).getAsk() != ts.getAsk()) {
 //          map.get(ts.getEffectiveDate()).getAdditives().add(Float.toString(ts.getAsk()));
@@ -106,10 +106,10 @@ public class CSVService {
   private static void saveCsv(String code, String text) {
     String fileName = code + FILE_EXTENSION;
     FileWriter fileWriter = null;
-    synchronized (lockers) {
-      if (!lockers.containsKey(code)) {
-        lockers.put(code, locker);
-      }
+    if (!lockers.containsKey(code)) {
+      lockers.put(code, locker);
+    }
+    synchronized (lockers.get(code)) {
       LOGGER.info("readTableFromCSV | Started Thread: " + Thread.currentThread().getName());
       try {
         fileWriter = new FileWriter(fileName);
@@ -134,10 +134,10 @@ public class CSVService {
     List<Values> values = new ArrayList<>();
     Path pathToFile = Paths.get(code + FILE_EXTENSION);
     String[] attributes = null;
-    synchronized (lockers) {
-      if (!lockers.containsKey(code)) {
-        lockers.put(code, locker);
-      }
+    if (!lockers.containsKey(code)) {
+      lockers.put(code, locker);
+    }
+    synchronized (lockers.get(code)) {
       LOGGER.info("readTableFromCSV | Started Thread: " + Thread.currentThread().getName());
       try (BufferedReader br = Files.newBufferedReader(pathToFile, StandardCharsets.US_ASCII)) {
         String line = br.readLine();
