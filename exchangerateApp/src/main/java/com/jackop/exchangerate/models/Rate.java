@@ -1,5 +1,6 @@
 package com.jackop.exchangerate.models;
 
+// TODO: Lombok @Data
 public class Rate {
 
   private String currency;

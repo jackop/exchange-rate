@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.logging.Logger;
 
 public class FetchService {
 
+  private static final Logger LOGGER = Logger.getLogger(FetchService.class.getName());
   private static final String METHOD_GET = "GET";
   private static final String ACCEPT = "Accept";
   private static final String APPLICATION_JSON = "application/json";
@@ -22,6 +24,7 @@ public class FetchService {
       connection = (HttpURLConnection) url.openConnection();
       connection.setRequestMethod(METHOD_GET);
       connection.setRequestProperty(ACCEPT, APPLICATION_JSON);
+
       if (connection.getResponseCode() != 200) {
         throw new HttpMethodException(
           "fetch() | Failed : HTTP error code : " + connection.getResponseCode());
@@ -29,7 +32,7 @@ public class FetchService {
       br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
       brString = br.readLine();
     } catch (IOException e) {
-      e.getMessage();
+      LOGGER.warning("fetch() | Exception " + e.getMessage());
     } finally {
       connection.disconnect();
     }

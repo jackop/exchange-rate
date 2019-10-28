@@ -5,15 +5,13 @@ import com.jackop.exchangerate.mapper.TableMapper;
 import com.jackop.exchangerate.models.Table;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.locks.StampedLock;
 import java.util.logging.Logger;
 
-public class GetExchangeRate extends Thread {
+public class GetExchangeRate implements Runnable {
 
+  private static final Logger LOGGER = Logger.getLogger(GetExchangeRate.class.getName());
   private static final FetchService fetchService = new FetchService();
   private static final TableMapper tableMapper = new TableMapper();
-  private static final StampedLock lock = new StampedLock();
-  private static final Logger LOGGER = Logger.getLogger(GetExchangeRate.class.getName());
 
   private String code;
   private String startDate;
@@ -31,6 +29,8 @@ public class GetExchangeRate extends Thread {
     if (response.isPresent()) {
       List<Table> currencyTable = tableMapper.map(response.get());
       CSVService.parseObjectForCsv(code, currencyTable);
+    } else {
+      LOGGER.warning("getExchangeRateData() | No data found in url: " + url);
     }
   }
 

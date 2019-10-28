@@ -2,6 +2,7 @@ package com.jackop.exchangerate.models;
 
 import java.util.List;
 
+// TODO: Lombok @Data
 public class Table {
 
   private String table;

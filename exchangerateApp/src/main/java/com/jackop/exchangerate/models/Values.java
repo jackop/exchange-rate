@@ -1,8 +1,8 @@
 package com.jackop.exchangerate.models;
 
-import java.util.List;
 import java.util.Set;
 
+// TODO: Lombok @Data
 public class Values {
 
   private String effectiveDate;
