@@ -137,7 +137,7 @@ public class CSVService {
 
     // synchronize when file with specific code is save
     synchronized (lockers.get(code)) {
-      LOGGER.info("readTableFromCSV | Started Thread: " + Thread.currentThread().getName());
+      LOGGER.info("saveCsv | Started Thread: " + Thread.currentThread().getName());
       try {
         fileWriter = new FileWriter(fileName);
         fileWriter.append(text);
@@ -153,7 +153,7 @@ public class CSVService {
         }
         lockers.remove(code);
       }
-      LOGGER.info("readTableFromCSV | Finished Thread: " + Thread.currentThread().getName());
+      LOGGER.info("saveCsv | Finished Thread: " + Thread.currentThread().getName());
     }
   }
 
