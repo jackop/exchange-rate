@@ -4,6 +4,7 @@ import com.jackop.exchangerate.mapper.ListValueMapper;
 import com.jackop.exchangerate.mapper.ValueMapper;
 import com.jackop.exchangerate.models.Table;
 import com.jackop.exchangerate.models.Values;
+import com.jackop.exchangerate.utils.CsvRowBuilder;
 import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -23,11 +24,11 @@ import java.util.stream.Collectors;
 public class CSVService {
 
   private static final Logger LOGGER = Logger.getLogger(CSVService.class.getName());
-  private static final String LINE_SEPARATOR = "line.separator";
   private static final String FILE_EXTENSION = ".csv";
   private static final ValueMapper valueMapper = new ValueMapper();
   private static final ListValueMapper listValueMapper = new ListValueMapper();
   private static final Map<String, Object> lockers = new ConcurrentHashMap<>();
+  private static final CsvRowBuilder csvRowBuilder = new CsvRowBuilder();
 
   /**
    * Method to parse object and save to CSV file
@@ -42,19 +43,7 @@ public class CSVService {
         .filter(Objects::nonNull)
         .distinct()
         .map(tab -> tab.getRates().stream().filter(rate -> rate.getCode().equalsIgnoreCase(code))
-          .map(rate -> {
-            StringBuilder row = new StringBuilder();
-            row.append(tab.getEffectiveDate());
-            row.append(",");
-            row.append(rate.getMid());
-            row.append(",");
-            row.append(rate.getAsk());
-            row.append(",");
-            row.append(rate.getBid());
-            row.append(System.getProperty(LINE_SEPARATOR));
-            return row.toString();
-          })
-          .collect(Collectors.joining()))
+          .map(rate -> csvRowBuilder.buildRowFroFirstCsv(tab, rate)).collect(Collectors.joining()))
         .collect(Collectors.joining());
 
       // when file exist
@@ -85,40 +74,20 @@ public class CSVService {
           } else if (map.get(ts.getEffectiveDate()).getBid() != ts.getBid()) {
             tsSet.add(Float.toString(ts.getBid()));
           }
-
           map.put(ts.getEffectiveDate(),
             new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid(), tsSet));
 
           // when not exist add new value from NBP Api
         } else {
-
           map.put(ts.getEffectiveDate(),
             new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid(),
               ts.getAdditives()));
-
         }
       });
-
       // aggregation data from Map
       values = map.entrySet().stream()
-        .filter(Objects::nonNull)
-        .map(v -> {
-          StringBuilder row = new StringBuilder();
-          row.append(v.getKey());
-          row.append(",");
-          row.append(v.getValue().getMid());
-          row.append(",");
-          row.append(v.getValue().getAsk());
-          row.append(",");
-          row.append(v.getValue().getBid());
-          v.getValue().getAdditives().parallelStream()
-            .forEach(ad -> {
-              row.append(",");
-              row.append(ad);
-            });
-          row.append(System.getProperty(LINE_SEPARATOR));
-          return row.toString();
-        }).collect(Collectors.joining());
+        .filter(Objects::nonNull).map(v -> csvRowBuilder.buildRowFroExistedCsv(v))
+        .collect(Collectors.joining());
     }
 
     // save to CSV file
