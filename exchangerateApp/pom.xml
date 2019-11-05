@@ -11,6 +11,7 @@
     <maven.source>8</maven.source>
     <jackson.version>2.9.10</jackson.version>
     <lombok.version>1.18.10</lombok.version>
+    <junit.version>4.12</junit.version>
   </properties>
 
   <dependencies>
@@ -23,6 +24,11 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
     </dependency>
   </dependencies>
   <build>
