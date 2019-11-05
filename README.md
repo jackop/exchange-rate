@@ -1,22 +1,25 @@
-# Exchange Rate Raport App 
+# Exchange Rate App 
 
-Build exvhange rate for choosen currency from some Date to another Date.
+Build exchange rate tables for choosen currency from some Date to another Date from two tables `A` and `C`
+from NBP Api. This application is multithreading. So in one application is running many threads for 
+different currencies. 
+<br>
+<br>
 
-```$xslt
-Runnable t6 = new GetExchangeRate("GBP", "2016-04-04", "2016-05-04");
-Runnable t7 = new GetExchangeRate("GBP", "2016-04-10", "2016-05-15");      
-```
+Output format: It's `.CSV ` file with values from tables `A` or `C` for specific current.
+<br>
+<br>
 
-Output format: `.CSV `
+##### Technology
 
-##### Issues
+- Java
+- Maven
+- Lombok
+- JUnit
 
-- Update mid, bid, ask for unique date (In progress)
+##### Improvements plan 
 
-##### Improvements plan
-
-1. Add Lomobok for handle model
-2. Write test for testing some pices of code
+1. Add executable function to run this application from CLI.
 
 ##### Link to API
 
