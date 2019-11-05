@@ -63,26 +63,9 @@ public class CSVService {
       tableStream.stream().distinct().forEach(ts -> {
         Set<String> tsSet = ts.getAdditives().stream().filter(Objects::nonNull)
           .collect(Collectors.toSet());
-
-        // when date exist put ask, mid, bid
-        if (map.containsKey(ts.getEffectiveDate())) {
-
-          if (map.get(ts.getEffectiveDate()).getAsk() != ts.getAsk()) {
-            tsSet.add(Float.toString(ts.getAsk()));
-          } else if (map.get(ts.getEffectiveDate()).getMid() != ts.getMid()) {
-            tsSet.add(Float.toString(ts.getMid()));
-          } else if (map.get(ts.getEffectiveDate()).getBid() != ts.getBid()) {
-            tsSet.add(Float.toString(ts.getBid()));
-          }
-          map.put(ts.getEffectiveDate(),
-            new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid(), tsSet));
-
-          // when not exist add new value from NBP Api
-        } else {
           map.put(ts.getEffectiveDate(),
             new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid(),
               ts.getAdditives()));
-        }
       });
       // aggregation data from Map
       values = map.entrySet().stream()
