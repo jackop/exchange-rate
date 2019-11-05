@@ -5,6 +5,7 @@ import com.jackop.exchangerate.mapper.TableMapper;
 import com.jackop.exchangerate.models.Table;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class GetExchangeRate implements Runnable {
@@ -30,7 +31,7 @@ public class GetExchangeRate implements Runnable {
       List<Table> currencyTable = tableMapper.map(response.get());
       CSVService.parseObjectForCsv(code, currencyTable);
     } else {
-      LOGGER.warning("getExchangeRateData() | No data found in url: " + url);
+      LOGGER.log(Level.INFO, "getExchangeRateData() | No data found in url: {0}", url);
     }
   }
 

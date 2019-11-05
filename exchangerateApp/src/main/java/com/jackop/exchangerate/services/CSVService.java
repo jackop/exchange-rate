@@ -16,8 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -48,10 +48,7 @@ public class CSVService {
 
       // when file exist
     } else {
-      // values from NBP Api
       List<Values> tableStream = listValueMapper.map(code, table);
-
-      // values from exist file with `code`
       List<Values> valuesStream = readTableFromCSV(code);
 
       // add to Map, which agrregate data
@@ -60,16 +57,12 @@ public class CSVService {
           vs.getAdditives())));
 
       // add from table NBP Api
-      tableStream.stream().distinct().forEach(ts -> {
-        Set<String> tsSet = ts.getAdditives().stream().filter(Objects::nonNull)
-          .collect(Collectors.toSet());
-          map.put(ts.getEffectiveDate(),
-            new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid(),
-              ts.getAdditives()));
-      });
-      // aggregation data from Map
+      tableStream.stream().distinct().forEach(ts -> map.put(ts.getEffectiveDate(),
+        new Values(ts.getEffectiveDate(), ts.getMid(), ts.getAsk(), ts.getBid(),
+          ts.getAdditives())));
+
       values = map.entrySet().stream()
-        .filter(Objects::nonNull).map(v -> csvRowBuilder.buildRowFroExistedCsv(v))
+        .filter(Objects::nonNull).map(csvRowBuilder::buildRowFroExistedCsv)
         .collect(Collectors.joining());
     }
 
@@ -89,23 +82,24 @@ public class CSVService {
 
     // synchronize when file with specific code is save
     synchronized (lockers.get(code)) {
-      LOGGER.info("saveCsv | Started Thread: " + Thread.currentThread().getName());
+      LOGGER.log(Level.INFO, "saveCsv | Started Thread: {0}", Thread.currentThread().getName());
       try {
         fileWriter = new FileWriter(fileName);
         fileWriter.append(text);
 
       } catch (IOException e) {
-        LOGGER.warning("saveCsv | Exeption durin write to file: " + e.getMessage());
+        LOGGER.log(Level.WARNING, "saveCsv | Exeption durin write to file: {0}", e.getMessage());
       } finally {
         try {
           fileWriter.flush();
           fileWriter.close();
         } catch (IOException e) {
-          LOGGER.warning("saveCsv | Exeption durin close & flush Writer: " + e.getMessage());
+          LOGGER.log(Level.WARNING, "saveCsv | Exeption durin close & flush Writer: {0}",
+            e.getMessage());
         }
         lockers.remove(code);
       }
-      LOGGER.info("saveCsv | Finished Thread: " + Thread.currentThread().getName());
+      LOGGER.log(Level.INFO, "saveCsv | Finished Thread: {0}", Thread.currentThread().getName());
     }
   }
 
@@ -122,7 +116,8 @@ public class CSVService {
 
     // synchronize when file with specific code is read
     synchronized (lockers.get(code)) {
-      LOGGER.info("readTableFromCSV | Started Thread: " + Thread.currentThread().getName());
+      LOGGER.log(Level.INFO, "readTableFromCSV | Started Thread: {0}",
+        Thread.currentThread().getName());
       try (BufferedReader br = Files.newBufferedReader(pathToFile, StandardCharsets.US_ASCII)) {
         String line = br.readLine();
         while (line != null) {
@@ -132,11 +127,12 @@ public class CSVService {
           line = br.readLine();
         }
       } catch (IOException ioe) {
-        LOGGER.warning("readTableFromCSV | Excetion: " + ioe.getMessage());
+        LOGGER.log(Level.WARNING, "readTableFromCSV | Excetion: {0}", ioe.getMessage());
       } finally {
         lockers.remove(code);
       }
-      LOGGER.info("readTableFromCSV | Finished Thread: " + Thread.currentThread().getName());
+      LOGGER.log(Level.INFO, "readTableFromCSV | Finished Thread: {0}",
+        Thread.currentThread().getName());
     }
 
     return values;

@@ -3,6 +3,7 @@ package com.jackop.exchangerate.services;
 import static java.util.Optional.ofNullable;
 import java.util.Optional;
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class URLService {
@@ -29,7 +30,7 @@ public class URLService {
       buildUrl.append("/");
       buildUrl.append(to);
     } else {
-      LOGGER.info("Selected table in url is null.");
+      LOGGER.log( Level.INFO, "Selected table in url is null.");
     }
 
     return buildUrl.toString();

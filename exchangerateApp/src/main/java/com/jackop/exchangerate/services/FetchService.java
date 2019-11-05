@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class FetchService {
@@ -32,7 +33,7 @@ public class FetchService {
       br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
       brString = br.readLine();
     } catch (IOException e) {
-      LOGGER.warning("fetch() | Exception " + e.getMessage());
+      LOGGER.log(Level.WARNING, "fetch() | Exception {0}", e.getMessage());
     } finally {
       connection.disconnect();
     }
